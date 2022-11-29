@@ -7,7 +7,7 @@ from getpass import getpass
 import urllib.parse
 from datetime import datetime
 import socket
-import guacamoleClient as guac
+import guacli.guacamoleClient as guac
 
 DEBUG = False
 
@@ -171,7 +171,7 @@ def delete_connection(client, args):
     client.deleteConnection(connectionId)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='Commands', dest='command', required=True)
     create_parser = subparsers.add_parser('create', help='Creates a resource')
@@ -246,3 +246,6 @@ if __name__ == "__main__":
     except guac.GuacError as e:
         print(e)
         exit(code=1)
+
+if __name__ == "__main__":
+    main()
