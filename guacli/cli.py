@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import os
 import argparse
@@ -8,6 +8,7 @@ import urllib.parse
 from datetime import datetime
 import socket
 import guacli.guacamoleClient as guac
+from guacli import __version__ as version
 
 DEBUG = False
 
@@ -189,6 +190,7 @@ def main():
     delete_connection_parser(delete_subparsers)
     
     # Common arguments
+    parser.add_argument('--version', action="version", version=version)
     parser.add_argument('--url', type=str, required=True, help='Guacamole endpoint URL. Example: https://chaimeleon-eu.i3m.upv.es/guacamole/')
     parser.add_argument('--user', type=str, required=True, help='User name for login into the Guacamole API-REST endpoint')
     parser.add_argument('--password', type=str, default='..........', 
@@ -238,7 +240,7 @@ def main():
             if args.resource == "connection": 
                 delete_connection(client, args)
         else:
-            print('Unkown command "' + args.command + '"')
+            print('Not implemented command "' + args.command + '"')
             exit(code=1)
 
         print('Done.')
