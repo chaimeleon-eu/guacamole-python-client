@@ -12,9 +12,10 @@ pip install guacli
 
 ```
 guacli --help
+guacli --url "https://example.com/guacamole" --user guacadmin create user james-smith
 ```
 
-## upgrade
+## Upgrade
 
 ```
 pip install --upgrade guacli
@@ -26,7 +27,7 @@ pip install --upgrade guacli
 pip uninstall guacli
 ```
 
-## manually install
+## Manually install
 
 ```
 cd /opt

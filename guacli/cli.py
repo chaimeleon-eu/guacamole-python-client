@@ -16,7 +16,7 @@ def create_user_parser(create_subparsers):
     create_user_parser = create_subparsers.add_parser('user', help='Creates a user', 
         description='This operation creates a user in guacamole database and a private connection group with the same name of the user.',
         epilog='Example of use: \n'
-            + os.path.basename(__file__)+' --url https://chaimeleon-eu.i3m.upv.es/guacamole/ --user admin create user user1')
+            + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin create user james-smith')
     create_user_parser.add_argument('NEW_USER_NAME', type=str, help='Name of the user to create')
     create_user_parser.add_argument('--new-user-password', type=str, default='..........', 
                                     help='Password for the user to create. (if this parameter is not set, it will be interactively asked)')
@@ -63,7 +63,7 @@ def delete_user_parser(create_subparsers):
     create_user_parser = create_subparsers.add_parser('user', help='Deletes a user.', 
         description='This operation deletes a user in guacamole database and the private connection group with the same name of the user.',
         epilog='Example of use: \n'
-            + os.path.basename(__file__)+' --url https://chaimeleon-eu.i3m.upv.es/guacamole/ --user admin delete user user1')
+            + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin delete user james-smith')
     create_user_parser.add_argument('USER_TO_DELETE', type=str, help='Name of the user to delete')
 
 def delete_user_and_private_connection_group(client, args):
@@ -86,7 +86,7 @@ def create_connection_parser(create_subparsers):
     create_connection_parser = create_subparsers.add_parser('connection', help='Creates a connection', 
         description='This operation creates a connection for localhost VNC service in the guacamole API-REST endpoint provided.',
         epilog='Example of use: \n'
-                + os.path.basename(__file__)+' --url https://chaimeleon-eu.i3m.upv.es/guacamole/ --user guacamoleUser create connection myConnection'
+                + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin create connection some-connection'
                                             +' --guacd-host 10.111.51.93 --vnc-password somePassword --sftp-user tensor --sftp-password somePassword2')
     create_connection_parser.add_argument('CONNECTION_NAME', type=str, help='Name for the new connection.')
     create_connection_parser.add_argument('--connection-group', type=str, default=None, 
@@ -142,7 +142,7 @@ def delete_connection_parser(delete_subparsers):
     create_connection_parser = delete_subparsers.add_parser('connection', help='deletes a connection', 
         description='This operation deletes a connection in the guacamole API-REST endpoint provided.',
         epilog='Example of use: \n'
-                + os.path.basename(__file__)+' --url https://chaimeleon-eu.i3m.upv.es/guacamole/ --user guacamoleUser delete connection myConnection')
+                + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin delete connection some-connection')
     create_connection_parser.add_argument('CONNECTION_NAME', type=str, 
                                           help='Name of the connection to delete.')
     create_connection_parser.add_argument('--connection-group', type=str, default=None, 
@@ -191,7 +191,7 @@ def main():
     
     # Common arguments
     parser.add_argument('--version', action="version", version=version)
-    parser.add_argument('--url', type=str, required=True, help='Guacamole endpoint URL. Example: https://chaimeleon-eu.i3m.upv.es/guacamole/')
+    parser.add_argument('--url', type=str, required=True, help='Guacamole endpoint URL. Example: "https://example.com/guacamole"')
     parser.add_argument('--user', type=str, required=True, help='User name for login into the Guacamole API-REST endpoint')
     parser.add_argument('--password', type=str, default='..........', 
                         help='Password for login into the Guacamole API-REST endpoint (you should have a user in guacamole database with a not empty password). ' 
