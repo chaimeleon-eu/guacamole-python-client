@@ -2,6 +2,10 @@
 
 A python client (library and CLI) for the Apache Guacamole front-end REST API.
 
+## Requirements
+
+Tested with python 3.10.2 and 3.6.9.
+
 ## Install
 
 ```
@@ -49,7 +53,7 @@ python -m guacli.cli --help
 
 Test the setup.py:
 ```
-pip install .
+pip install --log install.log .
 ```
 Uninstall with:
 ```

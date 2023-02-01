@@ -174,18 +174,21 @@ def delete_connection(client, args):
 
 def main():
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(title='Commands', dest='command', required=True)
+    subparsers = parser.add_subparsers(title='Commands', dest='command')
+    subparsers.required = True
     create_parser = subparsers.add_parser('create', help='Creates a resource')
     delete_parser = subparsers.add_parser('delete', help='Deletes a resource')
 
     # RESOURCES_LIST = ['user', 'connection']
     # GET_HELP_CMD = "Type of resource. Choices: %s" % ", ".join(RESOURCES_LIST)
     # create_parser.add_argument(metavar="<RESOURCE>", dest="resource_type", help=GET_HELP_CMD, choices=RESOURCES_LIST)
-    create_subparsers = create_parser.add_subparsers(title='Resource', dest='resource', required=True)
+    create_subparsers = create_parser.add_subparsers(title='Resource', dest='resource')
+    create_subparsers.required = True
     create_user_parser(create_subparsers)
     create_connection_parser(create_subparsers)
 
-    delete_subparsers = delete_parser.add_subparsers(title='Resource', dest='resource', required=True)
+    delete_subparsers = delete_parser.add_subparsers(title='Resource', dest='resource')
+    delete_subparsers.required = True
     delete_user_parser(delete_subparsers)
     delete_connection_parser(delete_subparsers)
     

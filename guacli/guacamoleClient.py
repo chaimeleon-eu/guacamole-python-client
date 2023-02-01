@@ -12,7 +12,7 @@ class GuacError(Exception):
 
 class GuacamoleClient:
 
-    def __init__(self, connection: http.client.HTTPConnection | http.client.HTTPSConnection, path: str):
+    def __init__(self, connection: "http.client.HTTPConnection | http.client.HTTPSConnection", path: str):
         self.connection = connection
         if not path.endswith('/'): path += '/'
         self.path = path
