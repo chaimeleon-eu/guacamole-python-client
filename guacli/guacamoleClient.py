@@ -31,7 +31,7 @@ class GuacamoleClient:
         self.path = path
         self.token = ''
     
-    def login(self, user, password):
+    def login(self, user: str, password: str):
         payload = urllib.parse.urlencode({'username' : user, 'password' : password})
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         self.connection.request("POST", self.path+"api/tokens", payload, headers)
@@ -43,7 +43,7 @@ class GuacamoleClient:
         response = json.loads(msg)
         self.token = response['authToken']
 
-    def existsUser(self, userName):
+    def existsUser(self, userName: str) -> bool:
         payload = ''
         headers = {}
         self.connection.request("GET", self.path+"api/session/data/postgresql/users?token="+self.token, payload, headers)
@@ -55,7 +55,7 @@ class GuacamoleClient:
         response = json.loads(msg)
         return True if userName in response.keys() else False
         
-    def getConnectionGroupId(self, connectionGroupName):
+    def getConnectionGroupId(self, connectionGroupName: str) -> "str | None":
         payload = ''
         headers = {}
         self.connection.request("GET", self.path+"api/session/data/postgresql/connectionGroups/ROOT/tree?token="+self.token, payload, headers)
@@ -70,10 +70,10 @@ class GuacamoleClient:
                 return group['identifier']
         return None
 
-    def existsConnectionGroup(self, connectionGroupName):
+    def existsConnectionGroup(self, connectionGroupName: str) -> bool:
         return (self.getConnectionGroupId(connectionGroupName) != None)
 
-    def createUser(self, userName, password):
+    def createUser(self, userName: str, password: str):
         newUser = {
             "username": userName,
             "password": password,
@@ -97,7 +97,7 @@ class GuacamoleClient:
         if httpStatusCode != 200:
             raise GuacError("Error creating the user", res, msg)
 
-    def deleteUser(self, userName):
+    def deleteUser(self, userName: str):
         payload = ""
         headers = {}
         self.connection.request("DELETE", self.path+"api/session/data/postgresql/users/"+userName+"?token="+self.token, payload, headers)
@@ -107,7 +107,7 @@ class GuacamoleClient:
         if httpStatusCode != 204:
             raise GuacError("Error deleting the user", res, msg)
 
-    def changeUserPassword(self, userName, password):
+    def changeUserPassword(self, userName: str, password: str):
         user = {
             "username": userName,
             "password": password,
@@ -148,13 +148,13 @@ class GuacamoleClient:
         if httpStatusCode != 204:
             raise GuacError("Error setting permissions for the user", res, msg)
 
-    def changeUserPermissions(self, userName, operation: PermissionsOperation, permission: SystemPermissions): 
+    def changeUserPermissions(self, userName: str, operation: PermissionsOperation, permission: SystemPermissions): 
         self._changeUserPermissions(userName, "/systemPermissions", operation.value, permission.value)
 
-    def changeUserAccessToConnection(self, userName, operation: PermissionsOperation, connectionId):
+    def changeUserAccessToConnection(self, userName: str, operation: PermissionsOperation, connectionId: str):
         self._changeUserPermissions(userName, "/connectionPermissions/"+connectionId, operation.value, ConnectionPermissions.READ.value)
 
-    def createConnectionGroup(self, connectionGroupName):
+    def createConnectionGroup(self, connectionGroupName: str):
         newConnectionGroup = {
             "parentIdentifier": "ROOT",
             "name": connectionGroupName,
@@ -175,7 +175,7 @@ class GuacamoleClient:
         if httpStatusCode != 200:
             raise GuacError("Error creating the connection group for the user", res, msg)
             
-    def deleteConnectionGroup(self, connectionGroupId):
+    def deleteConnectionGroup(self, connectionGroupId: str):
         payload = ""
         headers = {}
         self.connection.request("DELETE", self.path+"api/session/data/postgresql/connectionGroups/"+connectionGroupId+"?token="+self.token, payload, headers)
@@ -185,9 +185,10 @@ class GuacamoleClient:
         if httpStatusCode != 204:
             raise GuacError("Error deleting the connection group", res, msg)
             
-    def createVncConnection(self, connectionName, connectionGroupId, guacd_hostname, vnc_host, vnc_port, vnc_password, 
-                            sftp_user = None, sftp_password = None, sftp_port = "22", sftp_disable_download = False, sftp_disable_upload = False,
-                            disable_clipboard_copy = False, disable_clipboard_paste = False):
+    def createVncConnection(self, connectionName: str, connectionGroupId: str, guacd_hostname: str, vnc_host: str, vnc_port: str, vnc_password: str, 
+                            sftp_user: "str | None" = None, sftp_password: "str | None" = None, sftp_port: str = "22", 
+                            sftp_disable_download: bool = False, sftp_disable_upload: bool = False,
+                            disable_clipboard_copy: bool = False, disable_clipboard_paste: bool = False):
         newConnection = {
             "name": connectionName,
             "parentIdentifier": connectionGroupId,
@@ -250,7 +251,7 @@ class GuacamoleClient:
         response = json.loads(msg)
         return str(response['identifier'])
 
-    def getConnectionId(self, connectionName, connectionGroupId = "ROOT"):
+    def getConnectionId(self, connectionName: str, connectionGroupId: str = "ROOT"):
         payload = ''
         headers = {}
         self.connection.request("GET", self.path+"api/session/data/postgresql/connectionGroups/"+connectionGroupId+"/tree?token="+self.token, payload, headers)
@@ -265,7 +266,7 @@ class GuacamoleClient:
                 return str(connection['identifier'])
         return None
 
-    def deleteConnection(self, connectionId):
+    def deleteConnection(self, connectionId: str):
         payload = ""
         headers = {}
         self.connection.request("DELETE", self.path+"api/session/data/postgresql/connections/"+connectionId+"?token="+self.token, payload, headers)
