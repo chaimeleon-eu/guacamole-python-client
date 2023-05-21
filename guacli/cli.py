@@ -22,18 +22,18 @@ def create_user_parser(create_subparsers):
                                     help='Password for the user to create. (if this parameter is not set, it will be interactively asked)')
     create_user_parser.add_argument('--can-create-connections', action='store_true', help='The user will be able to create connections.')
 
-def create_user_and_private_connection_group(client, args, newUserPassword):
+def create_user_and_private_connection_group(client: guac.GuacamoleClient, args, newUserPassword):
     newUserName = args.NEW_USER_NAME
     # if client.existsUser(newUserName):
     #     print('The user '+newUserName+' already exists. Changing the password')
-    #     client.changePasswordToUser(newUserName, newUserPassword)
+    #     client.changeUserPassword(newUserName, newUserPassword)
     # else:
     print('Creating user: '+newUserName)
     client.createUser(newUserName, newUserPassword)
     
     if args.can_create_connections:
         print('Adding permission to create connections')
-        client.changePermissionToUser(newUserName, 'add', 'CREATE_CONNECTION')
+        client.changeUserPermissions(newUserName, guac.PermissionsOperation.ADD, guac.SystemPermissions.CREATE_CONNECTION)
         
     ret = client.existsConnectionGroup(newUserName)
     if ret: 
@@ -44,7 +44,7 @@ def create_user_and_private_connection_group(client, args, newUserPassword):
     #      If a connection group is created by an admin, only admins will be able to create connections in it.
 
     print('Adding permission to create connection groups to the user')
-    client.changePermissionToUser(newUserName, 'add', 'CREATE_CONNECTION_GROUP')
+    client.changeUserPermissions(newUserName, guac.PermissionsOperation.ADD, guac.SystemPermissions.CREATE_CONNECTION_GROUP)
     
     adminToken = client.token   # save admin token
     print('Login with the user... ', end='')
@@ -56,7 +56,7 @@ def create_user_and_private_connection_group(client, args, newUserPassword):
     
     print('Removing permission to create connection groups')
     client.token = adminToken     # restore admin token
-    client.changePermissionToUser(newUserName, 'remove', 'CREATE_CONNECTION_GROUP')
+    client.changeUserPermissions(newUserName, guac.PermissionsOperation.REMOVE, guac.SystemPermissions.CREATE_CONNECTION_GROUP)
     
 
 def delete_user_parser(create_subparsers):
@@ -66,7 +66,7 @@ def delete_user_parser(create_subparsers):
             + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin delete user james-smith')
     create_user_parser.add_argument('USER_TO_DELETE', type=str, help='Name of the user to delete')
 
-def delete_user_and_private_connection_group(client, args):
+def delete_user_and_private_connection_group(client: guac.GuacamoleClient, args):
     userToDelete = args.USER_TO_DELETE
     print('Deleting user: '+userToDelete)
     client.deleteUser(userToDelete)
@@ -109,7 +109,7 @@ def create_connection_parser(create_subparsers):
     create_connection_parser.add_argument('--disable-clipboard-copy', action='store_true', help='Disable copy from the remote clipboard.')
     create_connection_parser.add_argument('--disable-clipboard-paste', action='store_true', help='Disable paste into the remote clipboard.')
 
-def create_connection(client, args):
+def create_connection(client: guac.GuacamoleClient, args):
     if args.connection_group != None:
         ret = client.getConnectionGroupId(args.connection_group)
         if ret is None: 
@@ -149,7 +149,7 @@ def delete_connection_parser(delete_subparsers):
                                           help='Optional name of the conection group where the connection is. '
                                               +'If not provided, it will be deleted from the root group.')
     
-def delete_connection(client, args):
+def delete_connection(client: guac.GuacamoleClient, args):
     if args.connection_group != None:
         ret = client.getConnectionGroupId(args.connection_group)
         if ret is None: 
@@ -207,6 +207,7 @@ def main():
     
     # Parse Common arguments
     url = urllib.parse.urlparse(args.url)
+    if url.hostname is None: print('Wrong url.'); exit(code=1)
     port = url.port
     if url.scheme == 'http':
         if port == None: port = 80

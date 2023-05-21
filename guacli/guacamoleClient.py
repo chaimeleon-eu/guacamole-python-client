@@ -3,12 +3,25 @@
 import json
 import urllib.parse
 import http.client
+from enum import Enum
 
 DEBUG = False
 
 class GuacError(Exception):
     def __init__(self, short_msg, http_response, msg):
         super().__init__('%s. httpCode: %d %s' % (short_msg, http_response.status, http_response.reason) + '\n' + msg.decode())
+
+class PermissionsOperation(Enum):
+    ADD = "add"
+    REMOVE = "remove"
+
+class SystemPermissions(Enum):
+    CREATE_CONNECTION = "CREATE_CONNECTION"
+    CREATE_CONNECTION_GROUP = "CREATE_CONNECTION_GROUP"
+
+class ConnectionPermissions(Enum):
+    READ = "READ"
+
 
 class GuacamoleClient:
 
@@ -94,7 +107,7 @@ class GuacamoleClient:
         if httpStatusCode != 204:
             raise GuacError("Error deleting the user", res, msg)
 
-    def changePasswordToUser(self, userName, password):
+    def changeUserPassword(self, userName, password):
         user = {
             "username": userName,
             "password": password,
@@ -123,6 +136,24 @@ class GuacamoleClient:
         if httpStatusCode != 204:
             raise GuacError("Error modifying the user", res, msg)
             
+    def _changeUserPermissions(self, userName: str, path: str, operation: str, permission: str):
+        permissions = [{"op": operation, "path": path, "value": permission }]
+        payload = json.dumps(permissions)
+        if DEBUG: print(payload)
+        headers = {'Content-Type': 'application/json;charset=UTF-8'}
+        self.connection.request("PATCH", self.path+"api/session/data/postgresql/users/"+userName+"/permissions?token="+self.token, payload, headers)
+        res = self.connection.getresponse()
+        httpStatusCode = res.status
+        msg = res.read()  # whole response must be readed in order to do more requests using the same connection
+        if httpStatusCode != 204:
+            raise GuacError("Error setting permissions for the user", res, msg)
+
+    def changeUserPermissions(self, userName, operation: PermissionsOperation, permission: SystemPermissions): 
+        self._changeUserPermissions(userName, "/systemPermissions", operation.value, permission.value)
+
+    def changeUserAccessToConnection(self, userName, operation: PermissionsOperation, connectionId):
+        self._changeUserPermissions(userName, "/connectionPermissions/"+connectionId, operation.value, ConnectionPermissions.READ.value)
+
     def createConnectionGroup(self, connectionGroupName):
         newConnectionGroup = {
             "parentIdentifier": "ROOT",
@@ -153,18 +184,6 @@ class GuacamoleClient:
         msg = res.read()  # whole response must be readed in order to do more requests using the same connection
         if httpStatusCode != 204:
             raise GuacError("Error deleting the connection group", res, msg)
-            
-    def changePermissionToUser(self, userName, operation, permissionName): 
-        permissions = [{"op": operation, "path":"/systemPermissions", "value": permissionName }]
-        payload = json.dumps(permissions)
-        if DEBUG: print(payload)
-        headers = {'Content-Type': 'application/json;charset=UTF-8'}
-        self.connection.request("PATCH", self.path+"api/session/data/postgresql/users/"+userName+"/permissions?token="+self.token, payload, headers)
-        res = self.connection.getresponse()
-        httpStatusCode = res.status
-        msg = res.read()  # whole response must be readed in order to do more requests using the same connection
-        if httpStatusCode != 204:
-            raise GuacError("Error setting permissions for the user", res, msg)
             
     def createVncConnection(self, connectionName, connectionGroupId, guacd_hostname, vnc_host, vnc_port, vnc_password, 
                             sftp_user = None, sftp_password = None, sftp_port = "22", sftp_disable_download = False, sftp_disable_upload = False,
@@ -228,6 +247,8 @@ class GuacamoleClient:
         msg = res.read()  # whole response must be readed in order to do more requests using the same connection
         if httpStatusCode != 200:
             raise GuacError("Error creating the connection", res, msg)
+        response = json.loads(msg)
+        return str(response['identifier'])
 
     def getConnectionId(self, connectionName, connectionGroupId = "ROOT"):
         payload = ''
