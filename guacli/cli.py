@@ -181,6 +181,20 @@ def create_connection(client: guac.GuacamoleClient, args):
                              args.disable_clipboard_copy, args.disable_clipboard_paste)
     print('Done.')
 
+
+def _get_connection_group_id(client: guac.GuacamoleClient, connection_group):
+    if connection_group != None:
+        ret = client.getConnectionGroupId(connection_group)
+        if ret is None: 
+            print('Connection group "'+connection_group+'" not found.')
+            exit(code=2)
+        print('Id of connection group "'+connection_group+'" is '+ret+'.')
+        return ret
+    else:
+        print('Connection group not provided, using ROOT group.')
+        return 'ROOT'
+
+
 def delete_connection_parser(delete_subparsers):
     parser = delete_subparsers.add_parser('connection', help='deletes a connection', 
         description='This operation deletes a connection in the guacamole API-REST endpoint provided.',
@@ -193,27 +207,44 @@ def delete_connection_parser(delete_subparsers):
                             +'If not provided, it will be deleted from the ROOT group.')
     
 def delete_connection(client: guac.GuacamoleClient, args):
-    if args.connection_group != None:
-        ret = client.getConnectionGroupId(args.connection_group)
-        if ret is None: 
-            print('Connection group "'+args.connection_group+'" not found.')
-            exit(code=2)
-        print('Id of connection group "'+args.connection_group+'" is '+ret+'.')
-        connectionGroupId = ret
-    else:
-        print('Connection group not provided, using ROOT group.')
-        connectionGroupId = 'ROOT'
-
-    ret = client.getConnectionId(args.CONNECTION_NAME, connectionGroupId)
-    if ret is None: 
-        print('Connection "'+args.CONNECTION_NAME+'" not found in the connection group.')
-        exit(code=2)
-    print('Id of connection "'+args.CONNECTION_NAME+'" is '+ret+'.')
-    connectionId = ret
+    connectionGroupId = _get_connection_group_id(client, args.connection_group)
+    connectionId = _get_connection_id(client, connectionGroupId, args.CONNECTION_NAME)
 
     print('Deleting connection: ' + connectionId)
     client.deleteConnection(connectionId)
     print('Done.')
+
+
+def get_connection_inactivity_days_parser(get_subparsers):
+    parser = get_subparsers.add_parser('connection-inactivity-days', help='get num of inactivity days of a connection', 
+        description='This operation returns the number of days from the last access time of a connection in the guacamole API-REST endpoint provided.',
+        epilog='Example of use: \n'
+                + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin get connection-inactivity-days some-connection')
+    parser.add_argument('CONNECTION_NAME', type=str, 
+                        help='Name of the connection to get.')
+    parser.add_argument('--connection-group', type=str, default=None, 
+                        help='Optional name of the connection group where the connection is contained. '
+                            +'If not provided, it will be get from the ROOT group.')
+
+def _get_connection_id(client, connectionGroupId, connectionName):
+    ret = client.getConnectionId(connectionName, connectionGroupId)
+    if ret is None: 
+        print('Connection "'+connectionName+'" not found in the connection group.')
+        exit(code=2)
+    print('Id of connection "'+connectionName+'" is '+ret+'.')
+    return ret
+
+
+def get_connection_inactivity_days(client: guac.GuacamoleClient, args):
+    connectionGroupId = _get_connection_group_id(client, args.connection_group)
+    connectionId = _get_connection_id(client, connectionGroupId, args.CONNECTION_NAME)
+
+    print('Getting details of connection: ' + connectionId)
+    days = client.getConnectionInactivityDays(connectionId)
+    if days is None:
+        print('Connection never used yet.')
+    else:
+        print(str(days)+' days of inactivity')
 
 
 def main():
@@ -222,6 +253,7 @@ def main():
     subparsers.required = True
     create_parser = subparsers.add_parser('create', help='Creates a resource')
     delete_parser = subparsers.add_parser('delete', help='Deletes a resource')
+    get_parser = subparsers.add_parser('get', help='Gets a resource')
 
     # RESOURCES_LIST = ['user', 'connection']
     # GET_HELP_CMD = "Type of resource. Choices: %s" % ", ".join(RESOURCES_LIST)
@@ -237,6 +269,10 @@ def main():
     delete_subparsers.required = True
     delete_user_parser(delete_subparsers)
     delete_connection_parser(delete_subparsers)
+
+    get_subparsers = get_parser.add_subparsers(title='Resource', dest='resource')
+    get_subparsers.required = True
+    get_connection_inactivity_days_parser(get_subparsers)
     
     # Common arguments
     parser.add_argument('--version', action="version", version=version)
@@ -296,6 +332,12 @@ def main():
                 delete_user_and_private_connection_group(client, args)
             elif args.resource == "connection": 
                 delete_connection(client, args)
+            else:
+                print('Unknown resource "' + args.resource + '"')
+                exit(code=1)
+        elif args.command == "get":
+            if args.resource == "connection-inactivity-days":
+                get_connection_inactivity_days(client, args)
             else:
                 print('Unknown resource "' + args.resource + '"')
                 exit(code=1)

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import time
 import json
 import urllib.parse
 import http.client
@@ -314,3 +315,23 @@ class GuacamoleClient:
         if httpStatusCode != 204: 
             raise GuacError("Error deleting the connection", res, msg)
 
+    def getConnectionInactivityDays(self, connectionId: str) -> "int | None":
+        payload = ''
+        headers = {}
+        self.connection.request("GET", self.path+"api/session/data/postgresql/connections/"+connectionId+"/history?token="+self.token, payload, headers)
+        res = self.connection.getresponse()
+        httpStatusCode = res.status
+        msg = res.read()  # whole response must be readed in order to do more requests using the same connection
+        if httpStatusCode != 200:
+            raise GuacError("Error getting the connection", res, msg)
+        response = json.loads(msg)
+        if len(response) == 0:  # if never used yet
+            return None
+        LastCreatedConnectionHistoryEntry = response[0]  # let's assume the entries are sorted and the first is the last created
+        endTimestamp = LastCreatedConnectionHistoryEntry['endDate']   # timestamp in miliseconds
+        if endTimestamp is None:  # if currently being used
+            return 0
+        seconds = time.time() - endTimestamp/1000
+        return int(seconds/60/60/24)
+    
+    
