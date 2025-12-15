@@ -13,14 +13,14 @@ from guacli import __version__ as version
 DEBUG = False
 
 def create_user_parser(create_subparsers):
-    create_user_parser = create_subparsers.add_parser('user', help='Creates a user', 
+    parser = create_subparsers.add_parser('user', help='Creates a user', 
         description='This operation creates a user in guacamole database and a private connection group with the same name of the user.',
         epilog='Example of use: \n'
             + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin create user james-smith')
-    create_user_parser.add_argument('NEW_USER_NAME', type=str, help='Name of the user to create')
-    create_user_parser.add_argument('--new-user-password', type=str, default='..........', 
-                                    help='Password for the user to create. (if this parameter is not set, it will be interactively asked)')
-    create_user_parser.add_argument('--can-create-connections', action='store_true', help='The user will be able to create connections.')
+    parser.add_argument('NEW_USER_NAME', type=str, help='Name of the user to create')
+    parser.add_argument('--new-user-password', type=str, default='..........', 
+                        help='Password for the user to create. (if this parameter is not set, it will be interactively asked)')
+    parser.add_argument('--can-create-connections', action='store_true', help='The user will be able to create connections.')
 
 def create_user_and_private_connection_group(client: guac.GuacamoleClient, args, newUserPassword):
     newUserName = args.NEW_USER_NAME
@@ -57,14 +57,15 @@ def create_user_and_private_connection_group(client: guac.GuacamoleClient, args,
     print('Removing permission to create connection groups')
     client.token = adminToken     # restore admin token
     client.changeUserPermissions(newUserName, guac.PermissionsOperation.REMOVE, guac.SystemPermissions.CREATE_CONNECTION_GROUP)
+    print('Done.')
     
 
 def delete_user_parser(create_subparsers):
-    create_user_parser = create_subparsers.add_parser('user', help='Deletes a user.', 
+    parser = create_subparsers.add_parser('user', help='Deletes a user.', 
         description='This operation deletes a user in guacamole database and the private connection group with the same name of the user.',
         epilog='Example of use: \n'
             + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin delete user james-smith')
-    create_user_parser.add_argument('USER_TO_DELETE', type=str, help='Name of the user to delete')
+    parser.add_argument('USER_TO_DELETE', type=str, help='Name of the user to delete')
 
 def delete_user_and_private_connection_group(client: guac.GuacamoleClient, args):
     userToDelete = args.USER_TO_DELETE
@@ -80,34 +81,34 @@ def delete_user_and_private_connection_group(client: guac.GuacamoleClient, args)
 
     print('Deleting connection group: '+str(connectionGroupId))
     client.deleteConnectionGroup(connectionGroupId)
+    print('Done.')
     
 
 def create_connection_parser(create_subparsers):
-    create_connection_parser = create_subparsers.add_parser('connection', help='Creates a connection', 
+    parser = create_subparsers.add_parser('connection', help='Creates a connection', 
         description='This operation creates a connection for localhost VNC service in the guacamole API-REST endpoint provided.',
         epilog='Example of use: \n'
                 + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin create connection some-connection'
                                             +' --guacd-host 10.111.51.93 --vnc-password somePassword --sftp-user tensor --sftp-password somePassword2')
-    create_connection_parser.add_argument('CONNECTION_NAME', type=str, help='Name for the new connection.')
-    create_connection_parser.add_argument('--connection-group', type=str, default=None, 
-                                          help='Optional name of the existing connection group where create the new connection. '
-                                              +'If not provided, the root group will be used.')
-    create_connection_parser.add_argument('--guacd-host', type=str, required=True,
-                                          help='DNS name or IP of the guacd service host.')
-    create_connection_parser.add_argument('--vnc-host', type=str, default='..........', 
-                                          help='DNS name or IP of the destination host, the VNC server. If not provided, it will be the host running this command.')
-    create_connection_parser.add_argument('--vnc-password', type=str, required=True)
-    create_connection_parser.add_argument('--sftp-user', type=str, default='..........',
-                                          help='User name for connecting to the sftp (or ssh) service running in the same host for file transference.'
-                                              +'If not provided sftp connection will not be done (file transference disabled).')
-    create_connection_parser.add_argument('--sftp-password', type=str, default='..........',
-                                          help='Password for connecting to the sftp (or ssh) service.'
-                                              +'If sftp-user provided, the password for the VNC service will be used also for sftp.')
-    create_connection_parser.add_argument('--sftp-disable-file-uploads', action='store_true')
-    create_connection_parser.add_argument('--sftp-disable-file-downloads', action='store_true')
-
-    create_connection_parser.add_argument('--disable-clipboard-copy', action='store_true', help='Disable copy from the remote clipboard.')
-    create_connection_parser.add_argument('--disable-clipboard-paste', action='store_true', help='Disable paste into the remote clipboard.')
+    parser.add_argument('CONNECTION_NAME', type=str, help='Name for the new connection.')
+    parser.add_argument('--connection-group', type=str, default=None, 
+                        help='Optional name of the existing connection group where create the new connection. '
+                            +'If not provided, the ROOT group will be used.')
+    parser.add_argument('--guacd-host', type=str, required=True,
+                        help='DNS name or IP of the guacd service host.')
+    parser.add_argument('--vnc-host', type=str, default='..........', 
+                        help='DNS name or IP of the destination host, the VNC server. If not provided, it will be the host running this command.')
+    parser.add_argument('--vnc-password', type=str, required=True)
+    parser.add_argument('--sftp-user', type=str, default='..........',
+                        help='User name for connecting to the sftp (or ssh) service running in the same host for file transference.'
+                            +'If not provided sftp connection will not be done (file transference disabled).')
+    parser.add_argument('--sftp-password', type=str, default='..........',
+                        help='Password for connecting to the sftp (or ssh) service.'
+                            +'If sftp-user provided, the password for the VNC service will be used also for sftp.')
+    parser.add_argument('--sftp-disable-file-uploads', action='store_true')
+    parser.add_argument('--sftp-disable-file-downloads', action='store_true')
+    parser.add_argument('--disable-clipboard-copy', action='store_true', help='Disable copy from the remote clipboard.')
+    parser.add_argument('--disable-clipboard-paste', action='store_true', help='Disable paste into the remote clipboard.')
 
 def create_connection(client: guac.GuacamoleClient, args):
     if args.connection_group != None:
@@ -136,18 +137,18 @@ def create_connection(client: guac.GuacamoleClient, args):
                              vnc_host, vnc_port, args.vnc_password, sftp_user, sftp_password, sftp_port,  
                              args.sftp_disable_file_downloads, args.sftp_disable_file_uploads,
                              args.disable_clipboard_copy, args.disable_clipboard_paste)
-    
+    print('Done.')
 
 def delete_connection_parser(delete_subparsers):
-    create_connection_parser = delete_subparsers.add_parser('connection', help='deletes a connection', 
+    parser = delete_subparsers.add_parser('connection', help='deletes a connection', 
         description='This operation deletes a connection in the guacamole API-REST endpoint provided.',
         epilog='Example of use: \n'
                 + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin delete connection some-connection')
-    create_connection_parser.add_argument('CONNECTION_NAME', type=str, 
-                                          help='Name of the connection to delete.')
-    create_connection_parser.add_argument('--connection-group', type=str, default=None, 
-                                          help='Optional name of the conection group where the connection is. '
-                                              +'If not provided, it will be deleted from the root group.')
+    parser.add_argument('CONNECTION_NAME', type=str, 
+                        help='Name of the connection to delete.')
+    parser.add_argument('--connection-group', type=str, default=None, 
+                        help='Optional name of the conection group where the connection is contained. '
+                            +'If not provided, it will be deleted from the ROOT group.')
     
 def delete_connection(client: guac.GuacamoleClient, args):
     if args.connection_group != None:
@@ -170,6 +171,7 @@ def delete_connection(client: guac.GuacamoleClient, args):
 
     print('Deleting connection: ' + connectionId)
     client.deleteConnection(connectionId)
+    print('Done.')
 
 
 def main():
@@ -236,18 +238,23 @@ def main():
         if args.command == "create":
             if args.resource == "user":
                 create_user_and_private_connection_group(client, args, newUserPassword)
-            if args.resource == "connection": 
+            elif args.resource == "connection": 
                 create_connection(client, args)
+            else:
+                print('Unknown resource "' + args.resource + '"')
+                exit(code=1)
         elif args.command == "delete":
             if args.resource == "user":
                 delete_user_and_private_connection_group(client, args)
-            if args.resource == "connection": 
+            elif args.resource == "connection": 
                 delete_connection(client, args)
+            else:
+                print('Unknown resource "' + args.resource + '"')
+                exit(code=1)
         else:
-            print('Not implemented command "' + args.command + '"')
+            print('Unknown command "' + args.command + '"')
             exit(code=1)
 
-        print('Done.')
         exit(code=0)
     except guac.GuacError as e:
         print(e)

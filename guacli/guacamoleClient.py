@@ -251,7 +251,7 @@ class GuacamoleClient:
         response = json.loads(msg)
         return str(response['identifier'])
 
-    def getConnectionId(self, connectionName: str, connectionGroupId: str = "ROOT"):
+    def getConnectionId(self, connectionName: str, connectionGroupId: str = "ROOT") -> "str | None":
         payload = ''
         headers = {}
         self.connection.request("GET", self.path+"api/session/data/postgresql/connectionGroups/"+connectionGroupId+"/tree?token="+self.token, payload, headers)
