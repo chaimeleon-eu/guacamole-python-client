@@ -16,8 +16,12 @@ class PermissionsOperation(Enum):
     REMOVE = "remove"
 
 class SystemPermissions(Enum):
+    ADMINISTER = "ADMINISTER"
+    CREATE_USER = "CREATE_USER"
+    CREATE_USER_GROUP = "CREATE_USER_GROUP"
     CREATE_CONNECTION = "CREATE_CONNECTION"
     CREATE_CONNECTION_GROUP = "CREATE_CONNECTION_GROUP"
+    CREATE_SHARING_PROFILE = "CREATE_SHARING_PROFILE"
 
 class ConnectionPermissions(Enum):
     READ = "READ"
@@ -43,6 +47,40 @@ class GuacamoleClient:
         response = json.loads(msg)
         self.token = response['authToken']
 
+    def createGroup(self, groupName: str):
+        newGroup = {
+            "identifier": groupName,
+            "attributes": {
+                "disabled":""
+            }
+        }
+        payload = json.dumps(newGroup)
+        if DEBUG: print(payload)
+        headers = {'Content-Type': 'application/json;charset=UTF-8'}
+        self.connection.request("POST", self.path+"api/session/data/postgresql/userGroups?token="+self.token, payload, headers)
+        res = self.connection.getresponse()
+        httpStatusCode = res.status
+        msg = res.read()  # whole response must be readed in order to do more requests using the same connection
+        if httpStatusCode != 200:
+            raise GuacError("Error creating the group", res, msg)
+    
+    def _changeGroupPermissions(self, groupName: str, path: str, operation: PermissionsOperation, permissions: list[SystemPermissions]):
+        l = []
+        for permission in permissions:
+            l.append({"op": operation.value, "path": path, "value": permission.value })
+        payload = json.dumps(l)
+        if DEBUG: print(payload)
+        headers = {'Content-Type': 'application/json;charset=UTF-8'}
+        self.connection.request("PATCH", self.path+"api/session/data/postgresql/userGroups/"+groupName+"/permissions?token="+self.token, payload, headers)
+        res = self.connection.getresponse()
+        httpStatusCode = res.status
+        msg = res.read()  # whole response must be readed in order to do more requests using the same connection
+        if httpStatusCode != 204:
+            raise GuacError("Error setting permissions for the group", res, msg)
+
+    def changeGroupPermissions(self, groupName: str, operation: PermissionsOperation, permissions: list[SystemPermissions]): 
+        self._changeGroupPermissions(groupName, "/systemPermissions", operation, permissions)
+    
     def existsUser(self, userName: str) -> bool:
         payload = ''
         headers = {}

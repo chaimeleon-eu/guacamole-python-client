@@ -12,6 +12,48 @@ from guacli import __version__ as version
 
 DEBUG = False
 
+def create_admin_user_parser(create_subparsers):
+    parser = create_subparsers.add_parser('admin-user', help='Creates an admin user', 
+        description='This operation creates a user in guacamole database with admin permissions.',
+        epilog='Example of use: \n'
+            + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin create admin-user guacadmin2')
+    parser.add_argument('NEW_USER_NAME', type=str, help='Name of the user to create')
+    parser.add_argument('--new-user-password', type=str, default='..........', 
+                        help='Password for the user to create. (if this parameter is not set, it will be interactively asked)')
+
+def create_admin_user(client: guac.GuacamoleClient, args, newUserPassword):
+    newUserName = args.NEW_USER_NAME
+    # if client.existsUser(newUserName):
+    #     print('The user '+newUserName+' already exists. Changing the password')
+    #     client.changeUserPassword(newUserName, newUserPassword)
+    # else:
+    print('Creating user: '+newUserName)
+    client.createUser(newUserName, newUserPassword)
+    print('Adding permission to admin')
+    client.changeUserPermissions(newUserName, guac.PermissionsOperation.ADD, guac.SystemPermissions.ADMINISTER)
+    print('Done.')
+
+
+def create_admin_group_parser(create_subparsers):
+    parser = create_subparsers.add_parser('admin-group', help='Creates an admin group', 
+        description='This operation creates a group in guacamole database with all permissions.',
+        epilog='Example of use: \n'
+            + os.path.basename(__file__)+' --url "https://example.com/guacamole" --user guacadmin create admin-group guacadmins')
+    parser.add_argument('NEW_GROUP_NAME', type=str, help='Name of the group to create')
+
+def create_admin_group(client: guac.GuacamoleClient, args):
+    newGroupName = args.NEW_GROUP_NAME
+    # if client.existsUser(newUserName):
+    #     print('The user '+newUserName+' already exists. Changing the password')
+    #     client.changeUserPassword(newUserName, newUserPassword)
+    # else:
+    print('Creating group: '+newGroupName)
+    client.createGroup(newGroupName)
+    print('Adding all permissions to the group')
+    client.changeGroupPermissions(newGroupName, guac.PermissionsOperation.ADD, [p for p in guac.SystemPermissions])
+    print('Done.')
+
+
 def create_user_parser(create_subparsers):
     parser = create_subparsers.add_parser('user', help='Creates a user', 
         description='This operation creates a user in guacamole database and a private connection group with the same name of the user.',
@@ -187,6 +229,8 @@ def main():
     create_subparsers = create_parser.add_subparsers(title='Resource', dest='resource')
     create_subparsers.required = True
     create_user_parser(create_subparsers)
+    create_admin_user_parser(create_subparsers)
+    create_admin_group_parser(create_subparsers)
     create_connection_parser(create_subparsers)
 
     delete_subparsers = delete_parser.add_subparsers(title='Resource', dest='resource')
@@ -224,7 +268,7 @@ def main():
         loginPassword = getpass("Password for "+args.user+ " in Guacamole: ")
 
     newUserPassword = None
-    if args.command == "create" and args.resource == "user":
+    if args.command == "create" and ( args.resource == "user" or args.resource == "admin-user"):
         newUserPassword = args.new_user_password
         if newUserPassword == '..........':
             newUserPassword = getpass("Password for the new user "+args.NEW_USER_NAME+ ": ")
@@ -238,6 +282,10 @@ def main():
         if args.command == "create":
             if args.resource == "user":
                 create_user_and_private_connection_group(client, args, newUserPassword)
+            elif args.resource == "admin-user": 
+                create_admin_user(client, args, newUserPassword)
+            elif args.resource == "admin-group": 
+                create_admin_group(client, args)
             elif args.resource == "connection": 
                 create_connection(client, args)
             else:
