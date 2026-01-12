@@ -104,6 +104,7 @@ class GuacamoleClient:
         if httpStatusCode != 200:
             raise GuacError("Error getting connection groups", res, msg)
         response = json.loads(msg)
+        if 'childConnectionGroups' not in response: return None
         for group in response['childConnectionGroups']:
             if group['name'] == connectionGroupName: 
                 return group['identifier']
@@ -300,6 +301,7 @@ class GuacamoleClient:
         if httpStatusCode != 200:
             raise GuacError("Error getting connections", res, msg)
         response = json.loads(msg)
+        if 'childConnections' not in response: return None
         for connection in response['childConnections']:
             if connection['name'] == connectionName: 
                 return str(connection['identifier'])
