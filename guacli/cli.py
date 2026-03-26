@@ -225,6 +225,9 @@ def get_connection_inactivity_days_parser(get_subparsers):
     parser.add_argument('--connection-group', type=str, default=None, 
                         help='Optional name of the connection group where the connection is contained. '
                             +'If not provided, it will be get from the ROOT group.')
+    parser.add_argument('--username', type=str, default=None, 
+                        help='Optional username to filter, accesses from other users will be ignored. '
+                            +'If not provided, the most recent access will be taken, no matter the user did it.')
 
 def _get_connection_id(client, connectionGroupId, connectionName):
     ret = client.getConnectionId(connectionName, connectionGroupId)
@@ -240,7 +243,7 @@ def get_connection_inactivity_days(client: guac.GuacamoleClient, args):
     connectionId = _get_connection_id(client, connectionGroupId, args.CONNECTION_NAME)
 
     print('Getting details of connection: ' + connectionId)
-    days = client.getConnectionInactivityDays(connectionId)
+    days = client.getConnectionInactivityDays(connectionId, args.username)
     if days is None:
         print('Connection never used yet.')
     else:

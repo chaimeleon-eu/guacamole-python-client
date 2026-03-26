@@ -317,7 +317,10 @@ class GuacamoleClient:
         if httpStatusCode != 204: 
             raise GuacError("Error deleting the connection", res, msg)
 
-    def getConnectionInactivityDays(self, connectionId: str) -> "int | None":
+    def getConnectionInactivityDays(self, connectionId: str, username: str | None = None) -> "int | None":
+        ''' If username is not None, only the entries from that username will be taken into account. 
+            That way the accesses from other users like admins will be ignored.
+        '''
         payload = ''
         headers = {}
         self.connection.request("GET", self.path+"api/session/data/postgresql/connections/"+connectionId+"/history?token="+self.token, payload, headers)
@@ -329,7 +332,15 @@ class GuacamoleClient:
         response = json.loads(msg)
         if len(response) == 0:  # if never used yet
             return None
-        LastCreatedConnectionHistoryEntry = response[0]  # let's assume the entries are sorted and the first is the last created
+        if username is None:
+            LastCreatedConnectionHistoryEntry = response[0]  # let's assume the entries are sorted and the first is the last created
+        else:
+            LastCreatedConnectionHistoryEntry = None
+            for entry in response:
+                if entry['username'] == username:
+                    LastCreatedConnectionHistoryEntry = entry
+                    break
+            if LastCreatedConnectionHistoryEntry is None: return None
         endTimestamp = LastCreatedConnectionHistoryEntry['endDate']   # timestamp in miliseconds
         if endTimestamp is None:  # if currently being used
             return 0
